@@ -35,6 +35,24 @@ namespace cadencii
         private VsqFileEx sequence_;
         private int track_index_;
 
+        enum ParameterIndex : int
+        {
+            Volume = 0,
+            VolCons,
+            Sustain,
+            Speed,
+            BendSens,
+            VibRate,
+            Detune,
+            Resonanc,
+            Hard,
+            HardSust,
+            HardVelD,
+            Gender,
+            Portamen,
+            Poli,
+        }
+
         public AquesTone2WaveGenerator( AquesTone2Driver driver )
         {
             driver_ = driver;
@@ -97,6 +115,10 @@ namespace cadencii
             }
 
             appendPitchEvent( track, result );
+
+            appendAutomationEvent(track.MetaText.POR, (int)ParameterIndex.Portamen, result);
+            appendAutomationEvent(track.MetaText.GEN, (int)ParameterIndex.Gender, result);
+            appendAutomationEvent(track.MetaText.BRI, (int)ParameterIndex.Resonanc, result);
 
             return result;
         }
@@ -333,6 +355,7 @@ namespace cadencii
                 events.AddRange( queue.noteon );
                 driver_.send( events.ToArray() );
 
+                queue.param.ForEach((item) => driver_.setParameter(item.index, item.value / 100.0f));
                 //TODO: のこりのイベント送る処理
             }
 
@@ -368,6 +391,33 @@ namespace cadencii
             result.firstByte = 0x80;
             result.data = new int[] { note, 0x40 };
             return result;
+        }
+
+        /// <summary>
+        /// オートメーションのデータ点を、vst のパラメータイベントに変換しイベントキューに追加する
+        /// </summary>
+        /// <param name="automation">処理対象のオートメーション</param>
+        /// <param name="parameterIndex">vst のパラメータ番号</param>
+        /// <param name="result">追加先のイベントキュー</param>
+        private void appendAutomationEvent(VsqBPList automation, int parameterIndex, EventQueueSequence result)
+        {
+            Func<int, int, int, int> getAutomationValue = (value, min, max) => {
+                var normalized = Math.Max(min, Math.Min(max, value));
+                return (normalized - min) * 100 / (max - min);
+            };
+            if (!automation.isContainsKey(0)) {
+                var item = new ParameterEvent();
+                item.index = parameterIndex;
+                item.value = getAutomationValue(automation.Default, automation.Minimum, automation.Maximum);
+                result.get(0).param.add(item);
+            }
+            automation.ToList().ForEach((point) => {
+                var clock = point.Key;
+                var item = new ParameterEvent();
+                item.index = parameterIndex;
+                item.value = getAutomationValue(point.Value, automation.Minimum, automation.Maximum);
+                result.get(clock).param.Add(item);
+            });
         }
     }
 
