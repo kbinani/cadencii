@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
 using System.CodeDom.Compiler;
+using System.IO;
 using Microsoft.CSharp;
-using com.github.cadencii;
-using com.github.cadencii.apputil;
-using com.github.cadencii.java.io;
-using com.github.cadencii.vsq;
+using System.Linq;
+using cadencii;
+using cadencii.apputil;
+using cadencii.vsq;
 
-namespace com.github.cadencii
+namespace cadencii
 {
     /// <summary>
     /// プラグインファイルを読み込み、コンパイルするクラス
@@ -24,24 +25,24 @@ namespace com.github.cadencii
 #if ENABLE_SCRIPT
         public Assembly compileScript( string code, List<string> errors )
         {
-#if DEBUG
-            sout.println( "Utility#compileScript" );
-#endif
             Assembly ret = null;
 
             String md5 = PortUtil.getMD5FromString( code ).Replace( "_", "" );
             String cached_asm_file = fsys.combine( Utility.getCachedAssemblyPath(), md5 + ".dll" );
             bool compiled = false;
-#if !DEBUG
+
             if ( fsys.isFileExists( cached_asm_file ) ) {
                 ret = Assembly.LoadFile( cached_asm_file );
+                if ( !isValidCachedAssembly( ret ) ){
+                    ret = null;
+                    usedAssemblyChache.Remove( cached_asm_file );
+                }
                 if ( ret != null ) {
                     if ( !usedAssemblyChache.Contains( cached_asm_file ) ) {
                         usedAssemblyChache.Add( cached_asm_file );
                     }
                 }
             }
-#endif
 
             CompilerResults cr = null;
             if ( ret == null ) {
@@ -60,12 +61,12 @@ namespace com.github.cadencii
                 }
 
                 CompilerParameters parameters = new CompilerParameters( new String[] {
-                    fsys.combine( path, "org.kbinani.vsq.dll" ),
+                    fsys.combine( path, "cadencii.vsq.dll" ),
                     fsys.combine( path, "Cadencii.exe" ),
-                    fsys.combine( path, "org.kbinani.media.dll" ),
-                    fsys.combine( path, "org.kbinani.apputil.dll" ),
-                    fsys.combine( path, "org.kbinani.windows.forms.dll" ),
-                    fsys.combine( path, "org.kbinani.dll" )
+                    fsys.combine( path, "cadencii.media.dll" ),
+                    fsys.combine( path, "cadencii.apputil.dll" ),
+                    fsys.combine( path, "cadencii.windows.forms.dll" ),
+                    fsys.combine( path, "cadencii.core.dll" )
                 } );
                 parameters.ReferencedAssemblies.Add( "System.Windows.Forms.dll" );
                 parameters.ReferencedAssemblies.Add( "System.dll" );
@@ -112,7 +113,17 @@ namespace com.github.cadencii
 
             return ret;
         }
-#endif
+#endif // ENABLE_SCRIPT
+
+        /// <summary>
+        /// キャシュから読み込んだアセンブリが、このバージョンの Cadencii で使えるかどうかを調べる
+        /// </summary>
+        /// <param name="assembly">対象のアセンブリ</param>
+        /// <returns>使えるようであれば true</returns>
+        private static bool isValidCachedAssembly( Assembly assembly )
+        {
+            return assembly.GetReferencedAssemblies().All( ( asm ) => !asm.Name.Contains( "org.kbinani" ) );
+        }
 
         /// <summary>
         /// 使用されていないアセンブリのキャッシュを削除します
@@ -148,39 +159,14 @@ namespace com.github.cadencii
 #if ENABLE_SCRIPT
         public ScriptInvoker loadScript( String file )
         {
-#if JAVA
-            ScriptInvoker ret = new ScriptInvoker();
-            return ret;
-#else
-#if DEBUG
-            AppManager.debugWriteLine( "Utility#loadScript(String)" );
-            AppManager.debugWriteLine( "    File.GetLastWriteTimeUtc( file )=" + System.IO.File.GetLastWriteTimeUtc( file ) );
-#endif
             ScriptInvoker ret = new ScriptInvoker();
             ret.ScriptFile = file;
             ret.fileTimestamp = PortUtil.getFileLastModified( file );
             // スクリプトの記述のうち、以下のリストに当てはまる部分は空文字に置換される
-            String config_file = ScriptServer.configFileNameFromScriptFileName( file );
-            String script = "";
-            BufferedReader sr = null;
-            try {
-                sr = new BufferedReader( new FileReader( file ) );
-                String line = "";
-                while ( (line = sr.readLine()) != null ) {
-                    script += line + "\n";
-                }
-            } catch ( Exception ex ) {
-                serr.println( "Utility#loadScript; ex=" + ex );
-                Logger.write( typeof( Utility ) + ".loadScript; ex=" + ex + "\n" );
-            } finally {
-                if ( sr != null ) {
-                    try {
-                        sr.close();
-                    } catch ( Exception ex2 ) {
-                        serr.println( "Utility#loadScript; ex2=" + ex2 );
-                        Logger.write( typeof( Utility ) + ".loadScript; ex=" + ex2 + "\n" );
-                    }
-                }
+            string config_file = ScriptServer.configFileNameFromScriptFileName( file );
+            string script = "";
+            using ( StreamReader sr = new StreamReader( file ) ) {
+                script += sr.ReadToEnd();
             }
 
             var code = createPluginCode( script );
@@ -189,9 +175,6 @@ namespace com.github.cadencii
             List<string> errors = new List<string>();
             Assembly testAssembly = compileScript( code, errors );
             if ( testAssembly == null ) {
-                {//TODO:
-                    Console.WriteLine( code );
-                }
                 ret.scriptDelegate = null;
                 if ( errors.Count == 0 ) {
                     ret.ErrorMessage = "failed compiling";
@@ -207,9 +190,6 @@ namespace com.github.cadencii
                     ScriptDelegateGetDisplayName getDisplayNameDelegate = null;
 
                     MethodInfo get_displayname_delegate = implemented.GetMethod( "GetDisplayName", new Type[] { } );
-#if DEBUG
-                    Console.WriteLine( typeof( PluginLoader ) + "::loadScript; (get_displayname_delegate==null)=" + (get_displayname_delegate == null ? "true" : "false") );
-#endif
                     if ( get_displayname_delegate != null && get_displayname_delegate.IsStatic && get_displayname_delegate.IsPublic ) {
                         if ( get_displayname_delegate.ReturnType.Equals( typeof( String ) ) ) {
                             getDisplayNameDelegate = (ScriptDelegateGetDisplayName)Delegate.CreateDelegate( typeof( ScriptDelegateGetDisplayName ), get_displayname_delegate );
@@ -217,9 +197,6 @@ namespace com.github.cadencii
                     }
 
                     MethodInfo tmi = implemented.GetMethod( "Edit", new Type[] { typeof( VsqFile ) } );
-#if DEBUG
-                    Console.WriteLine( typeof( PluginLoader ) + "::loadScript; A; (tmi==null)=" + (tmi == null ? "true" : "false") );
-#endif
                     if ( tmi != null && tmi.IsStatic && tmi.IsPublic ) {
                         if ( tmi.ReturnType.Equals( typeof( bool ) ) ) {
                             scriptDelegate = (EditVsqScriptDelegate)Delegate.CreateDelegate( typeof( EditVsqScriptDelegate ), tmi );
@@ -228,9 +205,6 @@ namespace com.github.cadencii
                         }
                     }
                     tmi = implemented.GetMethod( "Edit", new Type[] { typeof( VsqFileEx ) } );
-#if DEBUG
-                    Console.WriteLine( typeof( PluginLoader ) + "::loadScript; B; (tmi==null)=" + (tmi == null ? "true" : "false") );
-#endif
                     if ( tmi != null && tmi.IsStatic && tmi.IsPublic ) {
                         if ( tmi.ReturnType.Equals( typeof( bool ) ) ) {
                             scriptDelegate = (EditVsqScriptDelegateEx)Delegate.CreateDelegate( typeof( EditVsqScriptDelegateEx ), tmi );
@@ -238,17 +212,10 @@ namespace com.github.cadencii
                             scriptDelegate = (EditVsqScriptDelegateExWithStatus)Delegate.CreateDelegate( typeof( EditVsqScriptDelegateExWithStatus ), tmi );
                         }
                     }
-#if DEBUG
-                    Console.WriteLine( typeof( PluginLoader ) + "::loadScript; (scriptDelegate==null)=" + (scriptDelegate == null ? "true" : "false") );
-#endif
                     if ( scriptDelegate != null ) {
                         ret.ScriptType = implemented;
                         ret.scriptDelegate = scriptDelegate;
-#if JAVA
-                        ret.Serializer = new XmlSerializer( implemented, true );
-#else
                         ret.Serializer = new XmlStaticMemberSerializerEx( implemented );
-#endif
                         ret.getDisplayNameDelegate = getDisplayNameDelegate;
 
                         if ( !fsys.isFileExists( config_file ) ) {
@@ -284,9 +251,8 @@ namespace com.github.cadencii
                 }
             }
             return ret;
-#endif
         }
-#endif
+#endif // ENABLE_SCRIPT
 
         /// <summary>
         /// プラグインのソースコード文面から、プラグインのバージョンを推定する
@@ -327,14 +293,6 @@ namespace com.github.cadencii
                 }
             }
             return processor.process( code );
-        }
-
-        private void hoge( string file )
-        {
-            CSharpCodeProvider p = new CSharpCodeProvider();
-            using ( var stream = new System.IO.StreamReader( file ) ) {
-                System.CodeDom.CodeCompileUnit unit = p.Parse( stream );
-            }
         }
     }
 }
