@@ -102,6 +102,7 @@
     <Compile Include="ExpressionConfigSys.cs" />
     <Compile Include="VibratoHandle.cs" />
     <Compile Include="VocaloSysUtil.cs" />
+    <Compile Include="VsqBPListEnumerator.cs" />
     <Compile Include="VsqBPPair.cs" />
     <Compile Include="VsqBPPairSearchContext.cs" />
     <Compile Include="VsqCommon.cs" />

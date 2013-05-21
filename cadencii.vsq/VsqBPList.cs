@@ -20,6 +20,8 @@ import cadencii.*;
 #else
 using System;
 using System.Text;
+using System.Collections;
+using System.Collections.Generic;
 using cadencii;
 using cadencii.java.io;
 using cadencii.java.util;
@@ -37,7 +39,7 @@ namespace cadencii.vsq
     public class VsqBPList implements Cloneable, Serializable
 #else
     [Serializable]
-    public class VsqBPList : ICloneable
+    public class VsqBPList : ICloneable, IEnumerable<KeyValuePair<int, int>>
 #endif
     {
         private int[] clocks;
@@ -825,6 +827,27 @@ namespace cadencii.vsq
                 }
             }
         }
+
+        public IEnumerator<KeyValuePair<int, int>>
+           GetEnumerator()
+        {
+            return (IEnumerator<KeyValuePair<int, int>>)(new VsqBPListEnumerator(this));
+        }
+
+        System.Collections.IEnumerator
+            System.Collections.IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        /// <summary>
+        /// XmlSerializer のために実装。Cadencii では、VsqBPList は VsqBPList::Data プロパティを用いて
+        /// シリアライズしている。データ点一つひとつのシリアライズは行なっていない関係で、
+        /// ここは空実装となっている。
+        /// </summary>
+        /// <param name="item"></param>
+        [Obsolete]
+        public void Add(object item) { }
     }
 
 #if !JAVA
