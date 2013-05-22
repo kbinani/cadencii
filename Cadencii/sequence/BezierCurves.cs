@@ -21,6 +21,7 @@ import cadencii.xml.*;
 #else
 using System;
 using cadencii.java.util;
+using cadencii.vsq;
 
 namespace cadencii {
     using boolean = System.Boolean;
@@ -58,7 +59,9 @@ namespace cadencii {
             CurveType.reso4bw,
             CurveType.reso4amp,
             CurveType.PIT,
-            CurveType.PBS, };
+            CurveType.PBS,
+            CurveType.AquesTone2Detune,
+        };
 
 #if JAVA
         @XmlGenericType( BezierChain.class )
@@ -161,6 +164,16 @@ namespace cadencii {
 #endif
         public Vector<BezierChain> PitchBendSensitivity;
 
+        /// <summary>
+        /// AquesTone2 Detune の Bezier 曲線
+        /// </summary>
+        public Vector<BezierChain> AquesTond2Detune;
+
+        /// <summary>
+        /// AquesTone2 Detune の BPList
+        /// </summary>
+        public VsqBPList AquesTone2DetuneBP;
+
         public BezierCurves()
         {
             Dynamics = new Vector<BezierChain>();
@@ -188,6 +201,8 @@ namespace cadencii {
             Reso4Amp = new Vector<BezierChain>();
             PitchBend = new Vector<BezierChain>();
             PitchBendSensitivity = new Vector<BezierChain>();
+            AquesTond2Detune = new Vector<BezierChain>();
+            AquesTone2DetuneBP = new VsqBPList("Detune", 40, 0, 100);
         }
 
         public BezierChain getBezierChain( CurveType curve_type, int chain_id )
@@ -448,6 +463,7 @@ namespace cadencii {
                     }
                 }
             }
+            if (AquesTone2DetuneBP != null) { AquesTone2DetuneBP.insertBlank(clock_start, clock_amount); }
         }
 
         /// <summary>
@@ -485,6 +501,8 @@ namespace cadencii {
                     }
                 }
             }
+
+            AquesTone2DetuneBP.removePart(clock_start, clock_end);
         }
 
         /// <summary>
@@ -616,6 +634,7 @@ namespace cadencii {
                     ret.get( ct ).add( (BezierChain)src.get( i ).clone() );
                 }
             }
+            ret.AquesTone2DetuneBP = (VsqBPList)AquesTone2DetuneBP.Clone();
             return ret;
         }
 
@@ -696,6 +715,8 @@ namespace cadencii {
                 return VibratoDepth;
             } else if ( curve.equals( CurveType.VibratoRate ) ) {
                 return VibratoRate;
+            } else if (curve.Equals(CurveType.AquesTone2Detune)) {
+                return AquesTond2Detune;
             } else {
                 return null;
             }
@@ -753,6 +774,8 @@ namespace cadencii {
                 VibratoDepth = value;
             } else if ( curve.equals( CurveType.VibratoRate ) ) {
                 VibratoRate = value;
+            } else if (curve.Equals(CurveType.AquesTone2Detune)) {
+                AquesTond2Detune = value;
             }
         }
     }
