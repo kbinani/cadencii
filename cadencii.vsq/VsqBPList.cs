@@ -841,6 +841,24 @@ namespace cadencii.vsq
         }
 
         /// <summary>
+        /// 指定した時刻に，指定した時間のブランクを挿入します
+        /// </summary>
+        /// <param name="clock_start">空白を挿入する clock 単位の時刻</param>
+        /// <param name="clock_amount">挿入するブランクの長さ(clock 単位)</param>
+        public void insertBlank(int clock_start, int clock_amount)
+        {
+            // 後ろからシフトしないといけない
+            int size = this.size();
+            for (int i = size - 1; i >= 0; i--) {
+                int clock = getKeyClock(i);
+                if (clock_start <= clock) {
+                    int value = getElementA(i);
+                    move(clock, clock + clock_amount, value);
+                }
+            }
+        }
+
+        /// <summary>
         /// XmlSerializer のために実装。Cadencii では、VsqBPList は VsqBPList::Data プロパティを用いて
         /// シリアライズしている。データ点一つひとつのシリアライズは行なっていない関係で、
         /// ここは空実装となっている。

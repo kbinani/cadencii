@@ -396,21 +396,12 @@ namespace cadencii.vsq
             }
 
             // コントロールカーブをシフト
-            foreach ( String name in CURVES ) {
-                VsqBPList list = getCurve( name );
-                if ( list == null ) {
+            foreach (String name in CURVES) {
+                VsqBPList list = getCurve(name);
+                if (list == null) {
                     continue;
                 }
-
-                // 後ろからシフトしないといけない
-                int size = list.size();
-                for ( int i = size - 1; i >= 0; i-- ){
-                    int clock = list.getKeyClock( i );
-                    if ( clock_start <= clock ) {
-                        int value = list.getElementA( i );
-                        list.move( clock, clock + clock_amount, value );
-                    }
-                }
+                list.insertBlank(clock_start, clock_amount);
             }
         }
 
