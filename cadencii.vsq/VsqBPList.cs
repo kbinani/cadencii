@@ -859,6 +859,34 @@ namespace cadencii.vsq
         }
 
         /// <summary>
+        /// このトラックの指定した範囲を削除し，削除範囲以降の部分を削除開始位置までシフトします
+        /// </summary>
+        /// <param name="clock_start"></param>
+        /// <param name="clock_end"></param>
+        public void removePart(int clock_start, int clock_end)
+        {
+            int dclock = clock_end - clock_start;
+            var buf_bplist = (VsqBPList)this.Clone();
+            this.clear();
+            int value_at_end = buf_bplist.getValue(clock_end);
+            boolean at_end_added = false;
+            for (var itr = buf_bplist.keyClockIterator(); itr.hasNext(); ) {
+                int key = itr.next();
+                if (key < clock_start) {
+                    this.add(key, buf_bplist.getValue(key));
+                } else if (clock_end <= key) {
+                    if (key == clock_end) {
+                        at_end_added = true;
+                    }
+                    this.add(key - dclock, buf_bplist.getValue(key));
+                }
+            }
+            if (!at_end_added) {
+                this.add(clock_end - dclock, value_at_end);
+            }
+        }
+
+        /// <summary>
         /// XmlSerializer のために実装。Cadencii では、VsqBPList は VsqBPList::Data プロパティを用いて
         /// シリアライズしている。データ点一つひとつのシリアライズは行なっていない関係で、
         /// ここは空実装となっている。

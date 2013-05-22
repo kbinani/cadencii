@@ -464,24 +464,7 @@ namespace cadencii.vsq
                 if ( bplist == null ) {
                     continue;
                 }
-                VsqBPList buf_bplist = (VsqBPList)bplist.clone();
-                bplist.clear();
-                int value_at_end = buf_bplist.getValue( clock_end );
-                boolean at_end_added = false;
-                for ( Iterator<Integer> itr = buf_bplist.keyClockIterator(); itr.hasNext(); ) {
-                    int key = itr.next();
-                    if ( key < clock_start ) {
-                        bplist.add( key, buf_bplist.getValue( key ) );
-                    } else if ( clock_end <= key ) {
-                        if ( key == clock_end ) {
-                            at_end_added = true;
-                        }
-                        bplist.add( key - dclock, buf_bplist.getValue( key ) );
-                    }
-                }
-                if ( !at_end_added ) {
-                    bplist.add( clock_end - dclock, value_at_end );
-                }
+                bplist.removePart(clock_start, clock_end);
             }
         }
 
