@@ -58,6 +58,7 @@ namespace cadencii
         reso4bw,
         reso4amp,
         Env,
+        AquesTone2Detune,
         Empty,
     }
 
@@ -187,6 +188,10 @@ namespace cadencii
         /// </summary>
         public static readonly CurveType reso4amp = new CurveType( CurveTypeImpl.reso4amp, false, false, 0, 127, 0, 24 );
         public static readonly CurveType Env = new CurveType( CurveTypeImpl.Env, true, true, 0, 200, 100, -1 );
+        /// <summary>
+        /// AquesTone2 Detune(index=25)
+        /// </summary>
+        public static readonly CurveType AquesTone2Detune = new CurveType(CurveTypeImpl.AquesTone2Detune, false, false, 0, 100, 40, 25);
 
         public static readonly CurveType Empty = new CurveType( CurveTypeImpl.Empty, false, false, 0, 0, 0, -1 );
 
@@ -257,6 +262,8 @@ namespace cadencii
                 mName = "res4amp";
             } else if ( mType == CurveTypeImpl.Env ) {
                 mName = "Env";
+            } else if (mType == CurveTypeImpl.AquesTone2Detune) {
+                mName = "Detune";
             } else {
 #if DEBUG
                 sout.println( "CurveType#.ctor; mType=" + mType );
