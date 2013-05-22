@@ -110,15 +110,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AttachedCurve.cs" />
     <Compile Include="AttackVariation.cs" />
     <Compile Include="AttackVariationConverter.cs" />
     <Compile Include="BAssemblyInfo.cs" />
-    <Compile Include="BezierChain.cs" />
-    <Compile Include="BezierControlType.cs" />
-    <Compile Include="BezierCurves.cs" />
     <Compile Include="BezierPickedSide.cs" />
-    <Compile Include="BezierPoint.cs" />
     <Compile Include="BgmFile.cs" />
     <Compile Include="BgmMenuItem.cs">
       <SubType>Component</SubType>
@@ -222,6 +217,12 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="SequenceConfig.cs" />
+    <Compile Include="sequence\AttachedCurve.cs" />
+    <Compile Include="sequence\BezierChain.cs" />
+    <Compile Include="sequence\BezierControlType.cs" />
+    <Compile Include="sequence\BezierCurves.cs" />
+    <Compile Include="sequence\BezierPoint.cs" />
+    <Compile Include="sequence\VsqFileEx.cs" />
     <Compile Include="SynthesizeWorker.cs" />
     <Compile Include="TestFormWorker.cs" />
     <Compile Include="TrackSelectorSingerDropdownMenuItem.cs">
@@ -513,7 +514,6 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="VsqBPListComparisonContext.cs" />
-    <Compile Include="VsqFileEx.cs" />
     <Compile Include="VstSdk.cs" />
     <Compile Include="WaveDrawContext.cs" />
     <Compile Include="WaveUnitConfig.cs" />
